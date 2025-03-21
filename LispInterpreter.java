@@ -83,4 +83,30 @@ public class LispInterpreter {
         }
     }
 
-   
+    // Método auxiliar para realizar operaciones matemáticas
+    private static int operar(List<String> args, Operacion op) {
+        int resultado = Integer.parseInt(evaluar(args.get(0)).toString());
+        for (int i = 1; i < args.size(); i++) {
+            resultado = op.ejecutar(resultado, Integer.parseInt(evaluar(args.get(i)).toString()));
+        }
+        return resultado;
+    }
+
+    // Método recursivo para calcular el factorial
+    private static int factorial(int n) {
+        if (n == 0) return 1;
+        return n * factorial(n - 1);
+    }
+
+    // Método recursivo para calcular el término n de la serie de Fibonacci
+    private static int fibonacci(int n) {
+        if (n <= 1) return n;
+        return fibonacci(n - 1) + fibonacci(n - 2);
+    }
+
+    // Interfaz funcional para definir operaciones matemáticas
+    @FunctionalInterface
+    interface Operacion {
+        int ejecutar(int a, int b);
+    }
+}
