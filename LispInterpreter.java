@@ -7,28 +7,35 @@ public class LispInterpreter {
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Bienvenido al intérprete de LISP. Escribe 'exit' para salir.");
+        System.out.println("Funciones soportadas: +, -, *, /, SETQ, CONVERTIR, FACTORIAL, FIBONACCI, MAX, MIN, PROMEDIO, CAR, CDR, CONS");
         while (true) {
             System.out.print("lisp> ");
             String input = scanner.nextLine();
-            if (input.equals("exit")) break;
-            System.out.println("Resultado: " + evaluar(input));
+            if (input.equalsIgnoreCase("exit")) break;
+            System.out.println("Resultado: " + evaluar(eliminarComentarios(input)));
         }
         scanner.close();
     }
 
     // Método para evaluar una expresión en LISP
     public static Object evaluar(String expresion) {
-        expresion = expresion.trim();
-        if (expresion.startsWith("(") && expresion.endsWith(")")) {
-            // Tokeniza la expresión eliminando los paréntesis externos
-            List<String> tokens = tokenizar(expresion.substring(1, expresion.length() - 1));
-            return procesarExpresion(tokens);
+        try {
+            expresion = expresion.trim();
+            if (expresion.startsWith("(") && expresion.endsWith(")")) {
+                // Tokeniza la expresión eliminando los paréntesis externos
+                List<String> tokens = tokenizar(expresion.substring(1, expresion.length() - 1));
+                return procesarExpresion(tokens);
+            }
+            return expresion;
+        } catch (NumberFormatException e) {
+            return "Error: Formato de número inválido";
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
         }
-        return expresion;
     }
 
-     // Método para dividir una expresión en tokens
-     private static List<String> tokenizar(String expresion) {
+    // Método para dividir una expresión en tokens
+    private static List<String> tokenizar(String expresion) {
         List<String> tokens = new ArrayList<>();
         int nivel = 0;
         StringBuilder token = new StringBuilder();
@@ -64,7 +71,7 @@ public class LispInterpreter {
             case "CONVERTIR": // Conversión de Celsius a Fahrenheit
                 if (argumentos.size() == 1) {
                     double celsius = Double.parseDouble(evaluar(argumentos.get(0)).toString());
-                    return (celsius * 9/5) + 32;
+                    return (celsius * 9 / 5) + 32;
                 }
                 return "Error: Número incorrecto de argumentos para CONVERTIR";
             case "FACTORIAL": // Cálculo del factorial recursivo
@@ -79,6 +86,41 @@ public class LispInterpreter {
                     return fibonacci(n);
                 }
                 return "Error: Número incorrecto de argumentos para FIBONACCI";
+            case "MAX":
+                return argumentos.stream()
+                        .mapToInt(arg -> Integer.parseInt(evaluar(arg).toString()))
+                        .max()
+                        .orElseThrow(() -> new IllegalArgumentException("Error: Lista vacía"));
+            case "MIN":
+                return argumentos.stream()
+                        .mapToInt(arg -> Integer.parseInt(evaluar(arg).toString()))
+                        .min()
+                        .orElseThrow(() -> new IllegalArgumentException("Error: Lista vacía"));
+            case "PROMEDIO":
+                return argumentos.stream()
+                        .mapToInt(arg -> Integer.parseInt(evaluar(arg).toString()))
+                        .average()
+                        .orElseThrow(() -> new IllegalArgumentException("Error: Lista vacía"));
+            case "CAR": // Devuelve el primer elemento de una lista
+                if (argumentos.size() == 1) {
+                    List<Object> lista = (List<Object>) evaluar(argumentos.get(0));
+                    return lista.isEmpty() ? "Error: Lista vacía" : lista.get(0);
+                }
+                return "Error: Número incorrecto de argumentos para CAR";
+            case "CDR": // Devuelve la lista sin el primer elemento
+                if (argumentos.size() == 1) {
+                    List<Object> lista = (List<Object>) evaluar(argumentos.get(0));
+                    return lista.isEmpty() ? "Error: Lista vacía" : lista.subList(1, lista.size());
+                }
+                return "Error: Número incorrecto de argumentos para CDR";
+            case "CONS": // Agrega un elemento al inicio de una lista
+                if (argumentos.size() == 2) {
+                    Object elemento = evaluar(argumentos.get(0));
+                    List<Object> lista = new ArrayList<>((List<Object>) evaluar(argumentos.get(1)));
+                    lista.add(0, elemento);
+                    return lista;
+                }
+                return "Error: Número incorrecto de argumentos para CONS";
             default: return "Error: Operador no reconocido";
         }
     }
@@ -98,10 +140,21 @@ public class LispInterpreter {
         return n * factorial(n - 1);
     }
 
-    // Método recursivo para calcular el término n de la serie de Fibonacci
+    // Método optimizado para calcular el término n de la serie de Fibonacci
     private static int fibonacci(int n) {
         if (n <= 1) return n;
-        return fibonacci(n - 1) + fibonacci(n - 2);
+        int[] fib = new int[n + 1];
+        fib[0] = 0;
+        fib[1] = 1;
+        for (int i = 2; i <= n; i++) {
+            fib[i] = fib[i - 1] + fib[i - 2];
+        }
+        return fib[n];
+    }
+
+    // Método para eliminar comentarios de una expresión
+    private static String eliminarComentarios(String expresion) {
+        return expresion.replaceAll(";.*", "").trim();
     }
 
     // Interfaz funcional para definir operaciones matemáticas
